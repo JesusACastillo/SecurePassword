@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Generador y verificador de contraseñas seguras. Crea contraseñas fuertes a partir de una palabra clave y verifica la seguridad de tus contraseñas existentes.">
+    <title>SecureKey — Generador de Contraseñas Seguras</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Loading overlay for Pyodide -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    <circle cx="12" cy="16" r="1"/>
+                </svg>
+            </div>
+            <h2>Cargando SecureKey</h2>
+            <p id="loadingStatus">Inicializando Python en tu navegador...</p>
+            <div class="loading-bar">
+                <div class="loading-bar-fill" id="loadingBarFill"></div>
+            </div>
+            <p class="loading-note">La lógica corre 100% en Python — sin servidores</p>
+        </div>
+    </div>
+
+    <!-- Animated background particles -->
+    <div class="bg-particles" id="bgParticles"></div>
+
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        <circle cx="12" cy="16" r="1"/>
+                    </svg>
+                </div>
+                <span class="logo-text">Secure<span class="logo-accent">Key</span></span>
+                <span class="python-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    Python
+                </span>
+            </div>
+            <nav class="nav-tabs" id="navTabs">
+                <button class="nav-tab active" data-section="generator" id="navGenerator">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    Generar
+                </button>
+                <button class="nav-tab" data-section="checker" id="navChecker">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                    Verificar
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- ==================== GENERATOR SECTION ==================== -->
+        <section class="section active" id="sectionGenerator">
+            <div class="section-header">
+                <h1 class="section-title">
+                    <span class="title-gradient">Genera Contraseñas</span>
+                    <span class="title-sub">Seguras e Inteligentes</span>
+                </h1>
+                <p class="section-desc">Ingresa una palabra clave y generaremos <strong>3 contraseñas únicas</strong> que cumplen con todos los estándares de seguridad.</p>
+            </div>
+
+            <div class="generator-card glass-card">
+                <div class="input-group">
+                    <label for="keywordInput" class="input-label">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                        </svg>
+                        Palabra Clave
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="keywordInput" class="text-input" placeholder="Escribe tu palabra clave..." maxlength="30" autocomplete="off">
+                        <span class="input-counter" id="charCounter">0/30</span>
+                    </div>
+                    <p class="input-hint">Ejemplo: <em>TigerLily</em>, <em>MoonRiver</em>, <em>SolarWind</em></p>
+                </div>
+
+                <button class="btn-generate" id="btnGenerate" disabled>
+                    <span class="btn-text">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                        Generar Contraseñas
+                    </span>
+                    <span class="btn-loading">
+                        <div class="spinner"></div>
+                        Generando...
+                    </span>
+                </button>
+            </div>
+
+            <!-- Results -->
+            <div class="results-container" id="resultsContainer">
+                <div class="results-header">
+                    <h2 class="results-title">Tus Contraseñas Seguras</h2>
+                    <button class="btn-regenerate" id="btnRegenerate" title="Regenerar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <polyline points="1 20 1 14 7 14"/>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                        Regenerar
+                    </button>
+                </div>
+                <div class="password-cards" id="passwordCards"></div>
+            </div>
+
+            <!-- Info Cards -->
+            <div class="info-grid">
+                <div class="info-card glass-card">
+                    <div class="info-icon" style="--accent: #6366f1;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                    </div>
+                    <h3>12+ Caracteres</h3>
+                    <p>Longitud mínima para máxima seguridad contra ataques de fuerza bruta.</p>
+                </div>
+                <div class="info-card glass-card">
+                    <div class="info-icon" style="--accent: #8b5cf6;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <h3>Mezcla Completa</h3>
+                    <p>Combina mayúsculas, minúsculas, números y símbolos especiales.</p>
+                </div>
+                <div class="info-card glass-card">
+                    <div class="info-icon" style="--accent: #ec4899;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </div>
+                    <h3>Evita lo Obvio</h3>
+                    <p>Transforma tu palabra de forma única, imposible de adivinar.</p>
+                </div>
+                <div class="info-card glass-card">
+                    <div class="info-icon" style="--accent: #14b8a6;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4 17 10 11 4 5"/>
+                            <line x1="12" y1="19" x2="20" y2="19"/>
+                        </svg>
+                    </div>
+                    <h3>Frase Secreta</h3>
+                    <p>Usa combinaciones únicas y memorables que solo tú conoces.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== CHECKER SECTION ==================== -->
+        <section class="section" id="sectionChecker">
+            <div class="section-header">
+                <h1 class="section-title">
+                    <span class="title-gradient">Verifica tu Contraseña</span>
+                    <span class="title-sub">¿Qué tan segura es?</span>
+                </h1>
+                <p class="section-desc">Ingresa tu contraseña y te diremos <strong>en tiempo real</strong> qué tan segura es y qué mejorar.</p>
+            </div>
+
+            <div class="checker-card glass-card">
+                <div class="input-group">
+                    <label for="passwordCheck" class="input-label">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <polyline points="9 12 11 14 15 10"/>
+                        </svg>
+                        Tu Contraseña
+                    </label>
+                    <div class="input-wrapper password-input-wrapper">
+                        <input type="password" id="passwordCheck" class="text-input" placeholder="Escribe tu contraseña aquí..." autocomplete="off">
+                        <button class="toggle-visibility" id="toggleVisibility" type="button" title="Mostrar/Ocultar">
+                            <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Strength Meter -->
+                <div class="strength-meter" id="strengthMeter">
+                    <div class="meter-header">
+                        <span class="meter-label">Nivel de Seguridad</span>
+                        <span class="meter-value" id="strengthLabel">—</span>
+                    </div>
+                    <div class="meter-bar-track">
+                        <div class="meter-bar-fill" id="strengthBar"></div>
+                    </div>
+                    <div class="meter-time" id="crackTime"></div>
+                </div>
+
+                <!-- Requirements Checklist -->
+                <div class="checklist" id="checklist">
+                    <h3 class="checklist-title">Requisitos de Seguridad</h3>
+                    <div class="check-item" id="checkLength">
+                        <div class="check-icon">
+                            <svg class="icon-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg class="icon-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="check-text">Mínimo 12 caracteres</span>
+                        <span class="check-count" id="lengthCount">(0/12)</span>
+                    </div>
+                    <div class="check-item" id="checkUpper">
+                        <div class="check-icon">
+                            <svg class="icon-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg class="icon-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="check-text">Letras mayúsculas (A-Z)</span>
+                    </div>
+                    <div class="check-item" id="checkLower">
+                        <div class="check-icon">
+                            <svg class="icon-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg class="icon-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="check-text">Letras minúsculas (a-z)</span>
+                    </div>
+                    <div class="check-item" id="checkNumber">
+                        <div class="check-icon">
+                            <svg class="icon-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg class="icon-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="check-text">Números (0-9)</span>
+                    </div>
+                    <div class="check-item" id="checkSymbol">
+                        <div class="check-icon">
+                            <svg class="icon-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg class="icon-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="check-text">Símbolos (!, @, #, $, %, etc.)</span>
+                    </div>
+                    <div class="check-item" id="checkCommon">
+                        <div class="check-icon">
+                            <svg class="icon-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg class="icon-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="check-text">No contiene palabras comunes</span>
+                    </div>
+                    <div class="check-item" id="checkSequence">
+                        <div class="check-icon">
+                            <svg class="icon-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg class="icon-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span class="check-text">Sin secuencias obvias (123, abc)</span>
+                    </div>
+                </div>
+
+                <!-- Verdict Banner -->
+                <div class="verdict-banner" id="verdictBanner">
+                    <div class="verdict-icon" id="verdictIcon"></div>
+                    <div class="verdict-content">
+                        <p class="verdict-text" id="verdictText"></p>
+                        <p class="verdict-tip" id="verdictTip"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips Section -->
+            <div class="tips-section">
+                <h2 class="tips-title">💡 Consejos para una Contraseña Fuerte</h2>
+                <div class="tips-grid">
+                    <div class="tip-card glass-card">
+                        <div class="tip-number">01</div>
+                        <h3>Usa Frases Secretas</h3>
+                        <p>Combina palabras únicas que solo tú conozcas. Por ejemplo: <code>T!g3rL!ly#2024!RunS</code></p>
+                    </div>
+                    <div class="tip-card glass-card">
+                        <div class="tip-number">02</div>
+                        <h3>Reemplaza Letras</h3>
+                        <p>Sustituye letras por números o símbolos: <code>a→@</code>, <code>e→3</code>, <code>i→!</code>, <code>o→0</code></p>
+                    </div>
+                    <div class="tip-card glass-card">
+                        <div class="tip-number">03</div>
+                        <h3>Evita lo Personal</h3>
+                        <p>No uses nombres, fechas de cumpleaños, o información que se pueda encontrar en redes sociales.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>SecureKey — Toda la lógica corre en <strong>Python</strong> directamente en tu navegador. Nada sale de tu máquina.</p>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span id="toastMessage">Contraseña copiada</span>
+    </div>
+
+    <!-- Pyodide: Python en el navegador -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
