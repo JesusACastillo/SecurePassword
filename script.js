@@ -490,6 +490,11 @@ toggleVisibility.addEventListener('click', () => {
 let checkDebounce = null;
 
 passwordCheck.addEventListener('input', () => {
+    if (passwordCheck.value.includes(' ')) {
+        passwordCheck.value = passwordCheck.value.replace(/\s+/g, '');
+        showToast('Las contraseñas no pueden contener espacios.');
+    }
+    
     const pwd = passwordCheck.value;
     if (!pwd) { resetChecker(); return; }
     clearTimeout(checkDebounce);
