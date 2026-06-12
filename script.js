@@ -95,6 +95,10 @@ def ensure_requirements(password):
 
 
 def generate_passwords(keyword):
+    words = keyword.split()
+    if len(words) > 3:
+        words = words[:3]
+    keyword = "".join(words)
     passwords = []
 
     # Estrategia 1: Leet speak + año + fragmento
@@ -430,6 +434,12 @@ btnGenerate.addEventListener('click', () => {
     currentKeyword = keywordInput.value.trim();
     if (!currentKeyword || !pythonReady) return;
 
+    const words = currentKeyword.split(/\s+/);
+    if (words.length > 3) {
+        showToast('Solo se permiten hasta 3 palabras clave.');
+        return;
+    }
+
     btnGenerate.classList.add('loading');
 
     setTimeout(() => {
@@ -445,6 +455,12 @@ btnGenerate.addEventListener('click', () => {
 
 btnRegenerate.addEventListener('click', () => {
     if (!currentKeyword || !pythonReady) return;
+
+    const words = currentKeyword.split(/\s+/);
+    if (words.length > 3) {
+        showToast('Solo se permiten hasta 3 palabras clave.');
+        return;
+    }
 
     passwordCards.style.opacity = '0';
     passwordCards.style.transform = 'translateY(10px)';
