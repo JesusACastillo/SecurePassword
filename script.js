@@ -78,23 +78,33 @@ def shuffle_middle(text):
     return chars[0] + ''.join(middle) + chars[-1]
 
 
-def ensure_requirements(password):
+def ensure_requirements(password, target_length=12):
+    target_length = max(12, target_length)
     pwd = password
-    if not any(c.isupper() for c in pwd):
-        pwd = pwd[:1] + 'X' + pwd[1:]
-    if not any(c.islower() for c in pwd):
-        pwd += 'k'
-    if not any(c.isdigit() for c in pwd):
-        pwd += str(random.randint(0, 9))
-    if not any(c in SYMBOLS for c in pwd):
-        pwd += random.choice(SYMBOLS)
-    while len(pwd) < 12:
-        pwd += random.choice(SYMBOLS)
-        pwd += str(random.randint(0, 9))
-    return pwd
+    if len(pwd) > target_length:
+        pwd = pwd[:target_length]
+    while len(pwd) < target_length:
+        pwd += random.choice(SYMBOLS + '0123456789')
+    pwd_chars = list(pwd)
+    missing = []
+    if not any(c.isupper() for c in pwd_chars): missing.append('X')
+    if not any(c.islower() for c in pwd_chars): missing.append('k')
+    if not any(c.isdigit() for c in pwd_chars): missing.append(str(random.randint(0, 9)))
+    if not any(c in SYMBOLS for c in pwd_chars): missing.append(random.choice(SYMBOLS))
+    for m in missing:
+        for _ in range(100):
+            idx = random.randint(0, len(pwd_chars) - 1)
+            c = pwd_chars[idx]
+            if c.isupper() and sum(1 for x in pwd_chars if x.isupper()) <= 1: continue
+            if c.islower() and sum(1 for x in pwd_chars if x.islower()) <= 1: continue
+            if c.isdigit() and sum(1 for x in pwd_chars if x.isdigit()) <= 1: continue
+            if c in SYMBOLS and sum(1 for x in pwd_chars if x in SYMBOLS) <= 1: continue
+            pwd_chars[idx] = m
+            break
+    return ''.join(pwd_chars)
 
 
-def generate_passwords(keyword):
+def generate_passwords(keyword, target_length=12):
     words = keyword.split()
     if len(words) > 3:
         words = words[:3]
@@ -107,7 +117,7 @@ def generate_passwords(keyword):
     sym = random_symbols(2)
     frag = random_fragment()
     pwd1 = f"{sym[0]}{leet}{sym[1]}{year}{frag}"
-    passwords.append(ensure_requirements(pwd1))
+    passwords.append(ensure_requirements(pwd1, target_length))
 
     # Estrategia 2: Palabra invertida + fragmento + dígitos
     reversed_word = keyword[::-1]
@@ -116,7 +126,7 @@ def generate_passwords(keyword):
     sym2 = random_symbols(2)
     frag2 = random_fragment()
     pwd2 = f"{frag2}{sym2[0]}{leet_rev}{digits}{sym2[1]}"
-    passwords.append(ensure_requirements(pwd2))
+    passwords.append(ensure_requirements(pwd2, target_length))
 
     # Estrategia 3: Intercalado mayúsculas/minúsculas + símbolos
     upper = keyword.upper()
@@ -130,7 +140,7 @@ def generate_passwords(keyword):
     frag3 = random_fragment()
     pwd3 = f"{interleaved}#{digits3}{frag3}"
     pwd3 = shuffle_middle(pwd3)
-    passwords.append(ensure_requirements(pwd3))
+    passwords.append(ensure_requirements(pwd3, target_length))
 
     return json.dumps(passwords)
 
@@ -301,12 +311,14 @@ const sectionGenerator = document.getElementById('sectionGenerator');
 const sectionChecker = document.getElementById('sectionChecker');
 const keywordInput = document.getElementById('keywordInput');
 const charCounter = document.getElementById('charCounter');
+const lengthInput = document.getElementById('lengthInput');
 const btnGenerate = document.getElementById('btnGenerate');
 const btnRegenerate = document.getElementById('btnRegenerate');
 const resultsContainer = document.getElementById('resultsContainer');
 const passwordCards = document.getElementById('passwordCards');
 const passwordCheck = document.getElementById('passwordCheck');
 const toggleVisibility = document.getElementById('toggleVisibility');
+const btnAcceptPassword = document.getElementById('btnAcceptPassword');
 const strengthBar = document.getElementById('strengthBar');
 const strengthLabel = document.getElementById('strengthLabel');
 const crackTime = document.getElementById('crackTime');
@@ -355,8 +367,17 @@ btnGenerate.addEventListener('mousemove', (e) => {
 // =========== KEYWORD INPUT ===========
 keywordInput.addEventListener('input', () => {
     const val = keywordInput.value;
-    charCounter.textContent = `${val.length}/30`;
+    charCounter.textContent = `${val.length}/14`;
     btnGenerate.disabled = val.trim().length === 0;
+});
+
+// =========== LENGTH INPUT VALIDATION ===========
+lengthInput.addEventListener('blur', () => {
+    const val = parseInt(lengthInput.value);
+    if (isNaN(val) || val < 12) {
+        lengthInput.value = 12;
+        showToast('La longitud mínima de la contraseña es 12');
+    }
 });
 
 // =========== HELPERS ===========
@@ -440,10 +461,17 @@ btnGenerate.addEventListener('click', () => {
         return;
     }
 
+    const targetLength = parseInt(lengthInput.value) || 12;
+    if (targetLength < 12) {
+        lengthInput.value = 12;
+        showToast('La longitud mínima es 12');
+        return;
+    }
+
     btnGenerate.classList.add('loading');
 
     setTimeout(() => {
-        const passwords = callPython('generate_passwords', currentKeyword);
+        const passwords = callPython('generate_passwords', currentKeyword, targetLength);
         if (passwords) {
             renderPasswords(passwords);
             resultsContainer.classList.add('visible');
@@ -462,11 +490,18 @@ btnRegenerate.addEventListener('click', () => {
         return;
     }
 
+    const targetLength = parseInt(lengthInput.value) || 12;
+    if (targetLength < 12) {
+        lengthInput.value = 12;
+        showToast('La longitud mínima es 12');
+        return;
+    }
+    
     passwordCards.style.opacity = '0';
     passwordCards.style.transform = 'translateY(10px)';
 
     setTimeout(() => {
-        const passwords = callPython('generate_passwords', currentKeyword);
+        const passwords = callPython('generate_passwords', currentKeyword, targetLength);
         if (passwords) {
             renderPasswords(passwords);
         }
@@ -587,6 +622,9 @@ function renderCheckResults(data) {
 
     verdictText.textContent = vText;
     verdictTip.textContent = vTip;
+
+    const allPassed = Object.values(checks).every(v => v === true);
+    btnAcceptPassword.disabled = !allPassed;
 }
 
 function toggleCheck(id, passed) {
@@ -602,7 +640,17 @@ function resetChecker() {
     document.getElementById('lengthCount').textContent = '(0/12)';
     ['checkLength', 'checkUpper', 'checkLower', 'checkNumber', 'checkSymbol', 'checkCommon', 'checkSequence']
         .forEach(id => document.getElementById(id).classList.remove('passed'));
+    btnAcceptPassword.disabled = true;
 }
+
+// =========== ACCEPT PASSWORD ===========
+btnAcceptPassword.addEventListener('click', () => {
+    if (!btnAcceptPassword.disabled) {
+        showToast('¡Contraseña validada y aceptada!');
+        passwordCheck.value = '';
+        resetChecker();
+    }
+});
 
 // =========== INIT ===========
 initPyodide();
