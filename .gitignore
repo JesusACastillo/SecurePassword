@@ -1,0 +1,23 @@
+# Common build and dependency outputs
+node_modules/
+dist/
+build/
+out/
+target/
+coverage/
+*.class
+
+# Local secrets and configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Editors, logs and operating systems
+.idea/
+.vscode/
+*.iml
+*.log
+.DS_Store
+Thumbs.db
+Desktop.ini
